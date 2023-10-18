@@ -1,0 +1,3 @@
+//protoc使用
+protoc ./*.proto --cppout=.
+

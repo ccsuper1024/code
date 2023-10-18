@@ -1,0 +1,9 @@
+syntax = "proto3";
+package student;
+ 
+// 定义联系人message
+message StudentInfo {
+  string name = 1;
+  bool isMale = 2;
+  int32 age = 3;
+}

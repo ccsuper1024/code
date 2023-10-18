@@ -1,0 +1,3 @@
+/home/chenchao/code/testopencv/test1/CMakeFiles/demo.dir
+/home/chenchao/code/testopencv/test1/CMakeFiles/edit_cache.dir
+/home/chenchao/code/testopencv/test1/CMakeFiles/rebuild_cache.dir

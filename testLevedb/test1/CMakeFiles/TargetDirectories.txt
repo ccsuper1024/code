@@ -1,0 +1,3 @@
+/home/chenchao/gitToCode/code/testLevedb/test1/CMakeFiles/leveldb_Test.dir
+/home/chenchao/gitToCode/code/testLevedb/test1/CMakeFiles/edit_cache.dir
+/home/chenchao/gitToCode/code/testLevedb/test1/CMakeFiles/rebuild_cache.dir

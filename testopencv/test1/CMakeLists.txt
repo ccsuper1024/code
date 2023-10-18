@@ -1,0 +1,11 @@
+cmake_minimum_required(VERSION 2.8)
+project( digital )
+find_package( OpenCV REQUIRED )
+include_directories( ${OpenCV_INCLUDE_DIRS} )
+add_executable( demo src/test1.cpp )
+#add_executable( dctimg src/dctimg.cpp )
+#add_executable( rgbdctimg src/rgbdctimg.cpp )
+target_link_libraries( demo ${OpenCV_LIBS} )
+#target_link_libraries( dctimg ${OpenCV_LIBS} )
+#target_link_libraries( rgbdctimg ${OpenCV_LIBS} )
+ 

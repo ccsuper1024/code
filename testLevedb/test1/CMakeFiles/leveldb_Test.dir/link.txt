@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/leveldb_Test.dir/test.cpp.o -o leveldb_Test   -L/usr/local/lib/libleveldb.a/usr/lib/x86_64-linux-gnu  -Wl,-rpath,/usr/local/lib/libleveldb.a/usr/lib/x86_64-linux-gnu -lsnappy 
