@@ -3,8 +3,8 @@
 #create directories
 import os
 
-dstdir = 'chapter'
-for i in range(1,13):
+dstdir = 'day'
+for i in range(1,27):
     dstdir += str(i)
     os.makedirs(dstdir)
-    dstdir = 'chapter'
+    dstdir = 'day'
