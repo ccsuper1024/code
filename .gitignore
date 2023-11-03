@@ -65,3 +65,7 @@ _deps
 *.ico
 *.webp
 *.pdf
+
+*.html
+*.css
+*.js

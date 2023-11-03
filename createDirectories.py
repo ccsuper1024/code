@@ -4,7 +4,7 @@
 import os
 
 dstdir = 'day'
-for i in range(1,27):
+for i in range(1,13):
     dstdir += str(i)
     os.makedirs(dstdir)
     dstdir = 'day'
