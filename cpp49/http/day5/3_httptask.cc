@@ -96,6 +96,8 @@ void test()
 
     // 创建任务
     std::string url = "http://www.baidu.com";
+    //原型：WFHttpTask* create_http_task(const string & url,int redirect_max,int retry_max,http_callback_t callback);
+    //using http_callback_t = std::function<void(WFHttpTask *)>
     WFHttpTask *httpTask = WFTaskFactory::create_http_task(url, 1, 1, 
         httpCallback);
 
@@ -103,7 +105,7 @@ void test()
     auto req = httpTask->get_req();
     req->add_header_pair("User-Agent", "workflow http client");
 
-    // 启动任务
+    // 立即启动任务。使用start()方法是立即异步启动线程的
     httpTask->start();
     // 阻塞等待
     waitgroup.wait();
