@@ -1,4 +1,54 @@
 /*@file 8_shareddata.cc @brief workflow的任务之间的共享数据传递 1*/
+//redistTask的类类型是如何继承而来的
+//using WFRedisTask = WFNetworkTask<protocol::RedisRequest,protocol::RedisResponse>;
+//template<class REQ, class RESP>
+//class WFNetworkTask : public CommRequest
+//class CommRequest : public SubTask, public CommSession
+/*class SubTask{        //抽象基类
+    ... 
+    private:
+	ParallelTask *parent;
+	SubTask **entry;
+	void *pointer;
+...
+}*/
+/*class CommSession     //抽象基类
+{
+private:
+	virtual CommMessageOut *message_out() = 0;
+	virtual CommMessageIn *message_in() = 0;
+	virtual int send_timeout() { return -1; }
+	virtual int receive_timeout() { return -1; }
+	virtual int keep_alive_timeout() { return 0; }
+	virtual int first_timeout() { return 0; }	//for client session only. 
+	virtual void handle(int state, int error) = 0;
+
+protected:
+	CommTarget *get_target() const { return this->target; }
+	CommConnection *get_connection() const { return this->conn; }
+	CommMessageOut *get_message_out() const { return this->out; }
+	CommMessageIn *get_message_in() const { return this->in; }
+	long long get_seq() const { return this->seq; }
+
+private:
+	CommTarget *target;
+	CommConnection *conn;
+	CommMessageOut *out;
+	CommMessageIn *in;
+	long long seq;
+
+private:
+	struct timespec begin_time;
+	int timeout;
+	int passive;
+
+public:
+	CommSession() { this->passive = 0; }
+	virtual ~CommSession();
+	friend class CommMessageIn;
+	friend class Communicator;
+};*/
+
 #include <signal.h> //注册信号
 #include <iostream>
 #include <string>

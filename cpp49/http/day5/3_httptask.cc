@@ -98,6 +98,7 @@ void test()
     std::string url = "http://www.baidu.com";
     //原型：WFHttpTask* create_http_task(const string & url,int redirect_max,int retry_max,http_callback_t callback);
     //using http_callback_t = std::function<void(WFHttpTask *)>
+    //第一个参数是url类型的地址，第二个参数为重定向次数，第三个参数是重试次数，第四个参数是回调函数
     WFHttpTask *httpTask = WFTaskFactory::create_http_task(url, 1, 1, 
         httpCallback);
 
