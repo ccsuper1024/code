@@ -1,4 +1,4 @@
-/*@file @brief*/
+/*@file 4_redistask.cc  @brief redistask是redis的客户端程序。作为发出请求，获取响应的一方*/
 #include <signal.h>
 #include <iostream>
 #include <string>

@@ -1,4 +1,4 @@
-/*@file 11_parallelwork.cc @brief 构建三个http任务的并行任务*/
+/*@file 11_parallelwork.cc @brief redis客户端程序  构建三个http任务的并行任务*/
 // workflow的基本单位是SeriesWork。即使是ParallelWork也要在SeriesWork内运行才可以
 // 所以这三个http任务要先包含在序列任务中，再被加入到并行任务中，最后这个并行任务要加
 // 入一个新的序列任务中
@@ -21,15 +21,16 @@ void sighandler(int num)
     printf("sig number %d is comming\n", num);
     waitGroup.done();
 }
-void parallelSeriesCallback(const SeriesWork *parallelWork)
-{
-    cout << "\n parallelSeriesCallback is running" << endl;
-    waitGroup.done(); // 结束框架
-}
 void parallelCallback(const ParallelWork *parallelWork)
 {
-    cout << "\n parallelCallback is running" << endl;
+    cout << "\n parallelCallback is running\n" << endl;
 }
+void parallelSeriesCallback(const SeriesWork *seriesWork)
+{
+    cout << ">> parallelSeriesCallback is running" << endl;
+    waitGroup.done(); // 结束框架
+}
+
 void httpCallback(WFHttpTask *httpTask);
 /* @brief @pram @return */
 void test()
@@ -59,6 +60,8 @@ void test()
     }
     // 将并行任务放入一个序列中，开始运行
     Workflow::start_series_work(parallenWork, parallelSeriesCallback);
+
+    waitGroup.wait();
 }
 int main()
 {
@@ -68,7 +71,7 @@ int main()
 
 void httpCallback(WFHttpTask *httpTask)
 {
-    std::cout << "httpCallback1 is running " << endl;
+    std::cout << "\nhttpCallback is running \n" << endl;
 
     // 1.错误的检测
     int state = httpTask->get_state();
@@ -96,8 +99,9 @@ void httpCallback(WFHttpTask *httpTask)
     // 获取http的请求报文信息
     // 2.1起始行
     protocol::HttpRequest *req = httpTask->get_req();
-    cout << req->get_method() << " " << req->get_http_version()
-         << " " << req->get_request_uri() << endl;
+    printf("%s %s %s\n", req->get_method(),
+           req->get_request_uri(),
+           req->get_http_version());
 
     // 2.2首部字段，需要通过一个迭代器进行遍历
     protocol::HttpHeaderCursor cursor(req);
@@ -106,12 +110,15 @@ void httpCallback(WFHttpTask *httpTask)
         cout << key << ": " << value << endl;
     }
     cout << endl;
+    //http的请求报文，是没有消息实体的
+
 
     //3.获得响应报文的信息
     auto resp = httpTask->get_resp();
     //3.1起始行
-    cout << resp->get_http_version() << " " << resp->get_status_code() << " "
-        << resp->get_reason_phrase() << endl; 
+    printf("%s %s %s\n",resp->get_http_version(),
+           resp->get_status_code(),
+           resp->get_reason_phrase()); 
     //3.2首部字段
     protocol::HttpHeaderCursor cursor2(resp);
     while(cursor2.next(key,value)){

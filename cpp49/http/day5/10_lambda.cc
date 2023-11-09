@@ -1,4 +1,4 @@
-/*@file @brief 任务间传递数据的方式 3 */
+/*@file @brief redis客户端程序，任务间传递数据的方式 3 */
 //通过lambda表达式捕获变量来获得共享数据
 #include <signal.h>
 #include <unistd.h>

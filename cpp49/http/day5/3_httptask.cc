@@ -1,4 +1,4 @@
-/*@file @brief*/
+/*@file 3_httptask.cc  @brief http客户端程序*/
 #include <signal.h>
 #include <iostream>
 #include <workflow/WFFacilities.h>
