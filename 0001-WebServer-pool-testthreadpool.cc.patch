@@ -1,0 +1,40 @@
+From a60c1efb7efc5e1fd7242c759f579ea7cac4d602 Mon Sep 17 00:00:00 2001
+From: chenchao <1024204974@qq.com>
+Date: Sat, 4 Nov 2023 01:02:20 +0800
+Subject: [PATCH] WebServer/pool/testthreadpool.cc
+
+---
+ WebServer/pool/testthreadpool.cc | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+ create mode 100644 WebServer/pool/testthreadpool.cc
+
+diff --git a/WebServer/pool/testthreadpool.cc b/WebServer/pool/testthreadpool.cc
+new file mode 100644
+index 0000000..b6b81c8
+--- /dev/null
++++ b/WebServer/pool/testthreadpool.cc
+@@ -0,0 +1,21 @@
++/* @file  @brief */
++#include <iostream>
++#include "./threadpool.h"
++
++
++using std::cout;
++using std::cin;
++using std::endl;
++using std::cerr;
++
++void task(){
++    cout << "hello" << endl;
++}
++/* @brief @param @param   @return */
++int main()
++{
++    ThreadPool threadpool(8);
++    threadpool.AddTask(std::move(task));
++    return 0;
++}
++
+-- 
+2.34.1
+

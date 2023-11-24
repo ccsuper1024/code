@@ -1,0 +1,4 @@
+testmysql.cpp: In function 'int main(int, char**)':
+testmysql.cpp:54:36: warning: suggest parentheses around assignment used as truth value [-Wparentheses]
+   54 |                         while (row = mysql_fetch_row(res))
+      |                                ~~~~^~~~~~~~~~~~~~~~~~~~~~
