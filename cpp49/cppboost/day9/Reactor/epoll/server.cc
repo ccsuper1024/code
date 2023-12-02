@@ -60,7 +60,7 @@ int main()
     errorHandling(ret,"listen");
     printf("server is listening...\n");
     
-    //创建epoll实例
+    //创建epoll实例,epoll适合海量连接，少量就绪。如果是少量连接，频繁就绪，适用于select/poll
     int efd = epoll_create1(0);     //红黑树+就绪链表
 
     //向内核注册就绪事件
@@ -80,20 +80,22 @@ int main()
     while(1){
         //Reactor  反应器
         int nready = epoll_wait(efd,evtList,1024,3000);     //3000ms
-        if(-1 == nready && errno == EINTR){//EINTR  The call was interrupted by a signal handler before either (1) any of the requested events occurred or (2) the timeout expired; see signal(7
+        //EINTR  The call was interrupted by a signal handler before either (1)
+        //any of the requested events occurred or (2) the timeout expired; 
+        //see signal(7)
+        if(-1 == nready && errno == EINTR){         //软中断
             continue;
         }
-        else if(-1 == nready){
+        else if(-1 == nready){                      //epoll_wait失败
             errorHandling(nready,"epoll_wait\n");
-        }else if(0 == nready){  //超时
+        }else if(0 == nready){                      //超时
             printf(">>epoll_wait timeout 3000ms\n");
-        }else{      //有就绪事件时
-            //遍历struct epoll_event数组，去check
+        }else{                                      //有就绪事件时
+            //遍历struct epoll_event数组evtList，去check
             //每一个epoll_event到底发生了什么
             for(int idx = 0; idx < nready; ++idx){
                 //必须使用位运算&操作来判断事件，不可以用==，&&
-                if((evtList[idx].data.fd == servFd) && 
-                    (evtList[idx].events & EPOLLIN)){   //当监听文件描述符就绪并且epoll实例的事件为读就绪
+                if((evtList[idx].data.fd == servFd) && (evtList[idx].events & EPOLLIN)){   //当监听文件描述符就绪并且epoll实例的事件为读就绪
                         //意味着有新连接来了，所以应该用accept函数，获取新连接
                         //写事件什么时候触发？只要内核发送缓存区还有空间，就可以触发写事件
                         socklen_t length = sizeof(clntAddr);
@@ -135,7 +137,7 @@ int main()
                                 ret = send(fd,buff,sizeof(buff),0); //更多的应该是后端处理后的结果发送回去，发送buff就是一个echo服务了
                                 printf(">> send %d bytes\n",ret);
                                 //onMessage();  //考虑扩展性，挖坑
-                            }else if(ret == 0){//接受0bytes
+                            }else if(ret == 0){//接收到0bytes
                                 printf("conn has closed\n");
 
                                 //需要从epoll实例中删除此连接对应的监听文件描述符
@@ -151,7 +153,7 @@ int main()
                             }//end of ret condition
                         }//end of read event conditon
                     }//end of event conditon
-            }//else if() //Reactor的其他情况
+                }//else if() //Reactor的其他情况
         }
     }
     close(servFd);
