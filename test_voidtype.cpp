@@ -9,10 +9,10 @@ using std::cin;
 
 
 /* @brief @pram @return */
-void test(){
-    int x = 2;
-    int y = 1;
-    cout << (void)x; //+ (void)y << endl;
+void test(void){
+     int x = 2;
+     int y = 1;
+     cout << (void)x;  //+ (void)y << endl;
 
 }
 int main()
