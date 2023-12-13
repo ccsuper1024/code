@@ -1,3 +1,4 @@
+set(CMAKE_CXX_STANDARD 11)
 set(LIBSAYHELLO_SRC sayhello.cc)
 add_library(sayhello_static STATIC ${LIBSAYHELLO_SRC})
 
