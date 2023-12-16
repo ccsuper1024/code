@@ -70,3 +70,5 @@ _deps
 *.err
 *.tmpobject
 *.keep
+.vscode/
+.idea/
