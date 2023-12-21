@@ -18,7 +18,7 @@ SocketIO::SocketIO(int fd)
 {
     fprintf(stdout,"explicit SocketIO(int fd)\n");
 } 
-ssize_t SocketIO::readn(char* buf,int len) {
+int SocketIO::readn(char* buf,int len) {
     int left = len;
     char* pstr = buf;
     int ret = 0;
@@ -39,7 +39,7 @@ ssize_t SocketIO::readn(char* buf,int len) {
     }
     return len - left;
 }
-ssize_t SocketIO::writen(const char* buf,int len) {
+int SocketIO::writen(const char* buf,int len) {
     int left = len - 1;     //最后一个字符不需要写入,这传入的是一个c风格字符串？
     const char* pstr = buf;
     int ret = 0;
@@ -60,7 +60,7 @@ ssize_t SocketIO::writen(const char* buf,int len) {
     }
     return len - left;
 }
-ssize_t SocketIO::readLine(char* buf,int len) {
+int SocketIO::readLine(char* buf,int len) {
     int left = len - 1;
     char* pstr = buf;
     int ret = 0, total = 0;

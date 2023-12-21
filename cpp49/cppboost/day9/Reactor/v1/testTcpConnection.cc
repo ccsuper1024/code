@@ -19,12 +19,12 @@ void test(){
 
     //调试
     std::string str = "hello";  //复制构造
-    conn.send(str);
+    //conn.send(str);
 
-    while(true) {
+    //while(true) {
         cout << ">>recv msg from client: " << conn.receive() << endl;
         conn.send("hello!\n");
-    }
+    //}/**/
 }
 int main()
 {
