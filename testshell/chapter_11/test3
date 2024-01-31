@@ -1,0 +1,12 @@
+#!/bin/bash
+#用户可以自定义变量来临时存储数据并在整个脚本使用。用户变量的格式和c语言中的变量命令格式一样。
+#使用等号可以将值赋值给用户变量。在变量、等号和值之间不能出现空格
+#bash会自动决定变量值的数据类型。
+#用户变量和环境变量一样可以用美元符号引用
+#test variables
+days=10
+guest="Katie"
+echo "$guest checked in $days days ago "
+days=5
+guest="Jessica"
+echo “$guest checked in $days days ago”

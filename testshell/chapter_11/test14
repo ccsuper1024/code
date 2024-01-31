@@ -1,0 +1,8 @@
+#!/bin/bash
+# testing the exit status
+var1=10
+var2=30
+var3=$[$var1 + $var2]
+#指定的退出状态码可以为变量的值。但要注意，这个值不可以超过255
+#如果超过则退出状态码会被取模，缩减到0-255的区间中
+exit $var3

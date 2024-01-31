@@ -1,0 +1,6 @@
+#!/bin/bash
+#引用变量的值时要加上美元符号，不然就被解释成为普通的文本字符串
+value1=10
+value2=$value1
+echo The resultinng value is $value2
+

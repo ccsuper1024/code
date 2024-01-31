@@ -1,0 +1,4 @@
+#!/bin/bash
+#使用内建的bc工具去执行浮点数计算
+var1=$(echo "scale=4; 3.44 / 5" | bc)
+echo The answer is $var1

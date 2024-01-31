@@ -1,0 +1,6 @@
+#!/bin/bash
+var1=100
+var2=45
+var3=$[$var1 / $var2]
+#bash shell只支持整数运算，不支持浮点数运算。z shell中提供了
+echo The final result is $var3

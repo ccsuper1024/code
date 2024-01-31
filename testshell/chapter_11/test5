@@ -1,0 +1,10 @@
+#!/bin/bash
+#shell脚本可以从命令输出中提出信息，并将其赋给变量。随后就可以在脚本中随意使用这个变量的值了
+#有两种方法来把命令输出赋给变量：1. 反引号 2.$()
+testing=$(date)
+echo "The date and time are: " $testing
+
+#copy the /usr/bin directory listening to a lig file
+today=$(date +%y%m%d)
+ls /usr/bin -al > log.$today
+

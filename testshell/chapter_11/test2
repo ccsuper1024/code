@@ -1,0 +1,8 @@
+#!/bin/bash
+# display user information from the system
+#即使是在字符串中，$符号仍然被解释成在使用变量
+echo "Uset info for userid: $USER"
+echo UID: $UID
+echo HOME: $HOME
+#如果要输出美刀符号，则要在此符号前加反斜杠
+echo "The cost of the item is \$15"

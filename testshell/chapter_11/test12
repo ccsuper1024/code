@@ -1,0 +1,18 @@
+#!/bin/bash
+
+var1=10.46
+var2=43.67
+var3=33.2
+var4=71
+
+#bash计算器
+#bc的输入可以从一个文件中重定向,也可以使用内联输入重定向
+var5=$(bc << EOF
+scale=4
+a1=($var1 * $var2)
+b1=($var3 * $var4)
+a1 + b1
+a1 * b1
+EOF
+       )
+echo The final answer for this mess is $var5

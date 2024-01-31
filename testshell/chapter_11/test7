@@ -1,0 +1,8 @@
+#!/bin/bash
+#bash shell相较于borne shell 提供了$[]方法来支持算数运算，不会对乘法符号或其他符号产生误解，因为shell知道
+#方括号中的不是通配符而是算术运算符
+var1=100
+var2=50
+var3=45
+var4=$[$var1 * ($var2 - $var3)]
+echo The final result is $var4
