@@ -1,0 +1,11 @@
+#/bin/bash
+#从变量值中读取列表
+
+list="albama alaska arizona arkansas colorado"
+list=$list" connecticut"    #shell中拼接字符串
+
+for state in $list
+do 
+    echo "Have you ever visited $state?"
+done
+

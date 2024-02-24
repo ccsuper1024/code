@@ -1,0 +1,7 @@
+#!/bin/bash
+# an example of how to properly define values
+
+for test in nevada "new hampshire" "new york" "new mexico"
+do 
+    echo "Now going to $test"
+done

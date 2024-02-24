@@ -1,0 +1,8 @@
+#!/bin/bash
+#for命令的基本用法
+#basic for command
+
+for test in alabama alaska arizona arkansas california colorado
+do
+    echo the next state is $test
+done

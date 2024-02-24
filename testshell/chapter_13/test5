@@ -1,0 +1,9 @@
+#!/bin/bash
+#reading values from a file
+
+file="file"
+
+for value in $(cat $file)
+do
+    echo "visit beautiful $value"
+done
