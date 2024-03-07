@@ -10,6 +10,7 @@ import (
 )
 
 //包级别变量
+//共享变量
 var mu sync.Mutex
 var count int
 
