@@ -1,1 +1,1 @@
-test code
+测试redis的特性
