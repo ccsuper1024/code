@@ -4,10 +4,20 @@
 
 #ifndef REACTOR_INETADDRESS_H
 #define REACTOR_INETADDRESS_H
+#include <arpa/inet.h>
+#include <string>
 
-
-class InetAddress {
-
+class InetAddress
+{
+public:
+    InetAddress(const std::string& ip, unsigned short port);
+    InetAddress(const struct sockaddr_in& addr);
+    std::string ip() const;
+    unsigned short port() const;
+    const struct sockaddr_in* getInetAddrPtr() const;
+    ~InetAddress()=default;
+private:
+    struct sockaddr_in _addr;
 };
 
 

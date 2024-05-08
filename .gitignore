@@ -73,3 +73,5 @@ _deps
 *.keep
 .vscode/
 .idea/
+
+cmake-build-debug/

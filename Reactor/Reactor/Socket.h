@@ -5,4 +5,16 @@
 #ifndef REACTOR_SOCKET_H
 #define REACTOR_SOCKET_H
 
+class Socket
+{
+public:
+    Socket();
+    explicit  Socket(int fd);
+    ~Socket();
+    int id();
+    void shutDownWrite();
+    void shutDownRead();
+private:
+    int _fd;
+};
 #endif //REACTOR_SOCKET_H
