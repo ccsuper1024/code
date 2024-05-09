@@ -10,6 +10,7 @@
 class InetAddress
 {
 public:
+    InetAddress();
     InetAddress(const std::string& ip, unsigned short port);
     InetAddress(const struct sockaddr_in& addr);
     std::string ip() const;

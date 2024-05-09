@@ -3,6 +3,10 @@
 //
 #include <strings.h>
 #include "InetAddress.h"
+InetAddress::InetAddress()
+{
+    ::bzero(&_addr, sizeof(struct sockaddr_in));
+}
 InetAddress::InetAddress(const std::string& ip, unsigned short port)
 {
     bzero(&_addr, sizeof(_addr));

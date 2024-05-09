@@ -11,7 +11,7 @@ public:
     Socket();
     explicit  Socket(int fd);
     ~Socket();
-    int id();
+    int fd();
     void shutDownWrite();
     void shutDownRead();
 private:
