@@ -14,7 +14,7 @@ void Acceptor::setReuseAddr() { //设置地址复用
     int ret = setsockopt(_sock.fd(),SOL_SOCKET,
                              SO_REUSEADDR,&on, sizeof(on));
     if(-1 == ret) {
-        fprintf(stderr, "setsockopt error");
+        fprintf(stderr, "setsockopt error\n");
         //TODO:LOG
         return ;
     }
@@ -24,7 +24,7 @@ void Acceptor::setReusePort() {   //设置端口复用
     int ret = setsockopt(_sock.fd(), SOL_SOCKET,
                          SO_REUSEPORT, &on, sizeof(on));
     if(-1 == ret) {
-        fprintf(stderr, "setsockopt error");
+        fprintf(stderr, "setsockopt error\n");
         //TODO:LOG
         return ;
     }
@@ -33,7 +33,7 @@ void Acceptor::bind() {
     int ret = ::bind(_sock.fd(), (struct sockaddr*)_addr.getInetAddrPtr(),
                      sizeof(struct sockaddr));
     if(-1 == ret) {
-        fprintf(stderr, "bind error");
+        fprintf(stderr, "bind error\n");
         //TODO:LOG
         return ;
     }
@@ -44,7 +44,7 @@ void Acceptor::listen() {   //监听。
     //而这两个队列的大小是listen()系统调用的第二个参数
     int ret = ::listen(_sock.fd(), 128);
     if(-1 == ret) {
-        fprintf(stderr, "listen error");
+        fprintf(stderr, "listen error\n");
         //TODO:LOG
         return ;
     }
@@ -67,7 +67,7 @@ int Acceptor::accept() {
     int connfd = ::accept(_sock.fd(), (struct sockaddr*)_peerAddr.getInetAddrPtr(),
                           &len);
     if(-1 == connfd) {
-        fprintf(stderr, "accept error");
+        fprintf(stderr, "accept error\n");
         //TODO:LOG
         return -1;
     }

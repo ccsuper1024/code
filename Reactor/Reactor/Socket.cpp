@@ -28,7 +28,7 @@ Socket::~Socket() {
     //关闭文件描述符， RAII机制
     close(_fd);
 }
-int Socket::id() {
+int Socket::fd() {
     return _fd;
 }
 

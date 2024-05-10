@@ -3,11 +3,12 @@
 //
 #ifndef REACTOR_TCPCONNECTION_H
 #define REACTOR_TCPCONNECTION_H
-#include <memory>
-#include <functional>
 #include "Socket.h"
 #include "SocketIO.h"
 #include "InetAddress.h"
+#include <memory>
+#include <functional>
+
 class EventLoop;        //前向声明
 class TcpConnection
 :public std::enable_shared_from_this<TcpConnection>
@@ -19,7 +20,7 @@ public:
     void send(const std::string& msg);
     void sendLoop(const std::string& msg);  //让msg在EventLoop中发送
     std::string receive();
-    std::string toString();
+    std::string outputString();
     bool isClosed();
     void setNewConnectionCallback(const TcpConnectionCallback& cb);
     void setMessageCallback(const TcpConnectionCallback& cb);

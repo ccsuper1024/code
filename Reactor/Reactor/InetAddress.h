@@ -13,6 +13,7 @@ public:
     InetAddress();
     InetAddress(const std::string& ip, unsigned short port);
     InetAddress(const struct sockaddr_in& addr);
+    bool isEmpty();
     std::string ip() const;
     unsigned short port() const;
     const struct sockaddr_in* getInetAddrPtr() const;

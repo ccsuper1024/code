@@ -17,9 +17,14 @@ InetAddress::InetAddress(const std::string& ip, unsigned short port)
 
 //复制构造
 InetAddress::InetAddress(const struct sockaddr_in& addr)
-:_addr(addr)
+:_addr(addr)    //结构体复制
 {
 
+}
+
+bool InetAddress::isEmpty() {
+    return _addr.sin_family == 0 && _addr.sin_port == 0
+             && _addr.sin_addr.s_addr == 0;
 }
 std::string InetAddress::ip() const {
     return std::string(inet_ntoa(_addr.sin_addr));
