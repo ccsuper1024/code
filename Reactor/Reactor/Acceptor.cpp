@@ -63,13 +63,14 @@ void Acceptor::ready() {
 //很明显 只要使用IO多路复用，那么网络编程中的accept()系统调用和其他诸如socket(),bind(),listen()的
 //函数要分开
 int Acceptor::accept() {
-    socklen_t len = sizeof((*_peerAddr.getInetAddrPtr()));
-    int connfd = ::accept(_sock.fd(), (struct sockaddr*)_peerAddr.getInetAddrPtr(),
-                          &len);
+//    socklen_t len = sizeof((*_peerAddr.getInetAddrPtr()));
+//    int connfd = ::accept(_sock.fd(), (struct sockaddr*)_peerAddr.getInetAddrPtr(),
+//    len);
+    int connfd = ::accept(_sock.fd(), nullptr, nullptr);
     if(-1 == connfd) {
-        fprintf(stderr, "accept error\n");
+        perror("accept");
         //TODO:LOG
-        return -1;
+        return connfd;
     }
     return connfd;
 }

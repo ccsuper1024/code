@@ -3,5 +3,5 @@
 
 int main() {
     Socket sock;
-    std::cout << "the id of the sock is " << sock.id() << std::endl;
+    std::cout << "the id of the sock is " << sock.fd() << std::endl;
 }

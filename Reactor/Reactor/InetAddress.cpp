@@ -2,6 +2,8 @@
 // Created by chenchao on 24-5-8.
 //
 #include <strings.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include "InetAddress.h"
 InetAddress::InetAddress()
 {
@@ -11,7 +13,7 @@ InetAddress::InetAddress(const std::string& ip, unsigned short port)
 {
     bzero(&_addr, sizeof(_addr));
     _addr.sin_family = AF_INET;
-    _addr.sin_addr.s_addr = inet_addr(ip.c_str());
+    _addr.sin_addr.s_addr = inet_addr(ip.c_str());  //主机字节序->网络字节序
     _addr.sin_port = htons(port);
 }
 

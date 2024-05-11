@@ -10,10 +10,14 @@
 #include "Socket.h"
 Socket::Socket()
 {
-    _fd = socket(AF_INET,SOCK_STREAM,0);
+    //加上全局作用域
+    _fd = ::socket(AF_INET,SOCK_STREAM,0);
     if(_fd < 0) {
         //TODO: log
+        perror("socket ");
+        return ;
     }
+    fprintf(stdout, "the listenfd is %d\n", _fd);
 }
 Socket::Socket(int fd)
 :_fd(fd)
@@ -33,7 +37,7 @@ int Socket::fd() {
 }
 
 void Socket::shutDownWrite() {
-    int ret = shutdown(_fd, SHUT_WR);
+    int ret = ::shutdown(_fd, SHUT_WR);
     if(ret < 0) {
         //TODO: log
         fprintf(stderr, "shutdown on writer fail");
@@ -41,7 +45,7 @@ void Socket::shutDownWrite() {
     }
 }
 void Socket::shutDownRead() {
-    int ret = shutdown(_fd, SHUT_RD);
+    int ret = ::shutdown(_fd, SHUT_RD);
     if(ret < 0) {
         //TODO: log
         fprintf(stderr, "shutdown on read fail");

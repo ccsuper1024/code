@@ -20,6 +20,8 @@ EventLoop::EventLoop(Acceptor& acceptor)
 ,_onConnectionCb()
 ,_onMessageCb()
 ,_onCloseCb()
+,_pendings()
+,_mtx()
 {
     //监听 监听套件字描述符
     addEpollReadFd(_acceptor.accept());
@@ -148,7 +150,7 @@ void EventLoop::waitEpollFd() {
         //TODO:LOG
         return;
     } else if(0 == nready) {                    //在指定时间内没有事件就绪
-        fprintf(stderr, "epoll_wait timeout");
+        fprintf(stderr, "epoll_wait timeout\n");
         //TODO:LOG
         //只是一次超时，在事件循环中不需要退出程序
     } else {                                    //事件就绪
@@ -158,7 +160,7 @@ void EventLoop::waitEpollFd() {
                 nready <= static_cast<int>(_evtlist.size())) {
             _evtlist.resize(2 * nready);
         }
-        for(int idx{0}; idx < _evtlist.size(); ++idx) {     //遍历返回的事件列表
+        for(long unsigned int idx{0}; idx < _evtlist.size(); ++idx) {     //遍历返回的事件列表
                 int fd = _evtlist[idx].data.fd;
                 auto event = _evtlist[idx].events;
                 //就绪事件是监听套接字时
