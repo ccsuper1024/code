@@ -58,6 +58,7 @@ void Acceptor::ready() {
     this->setReusePort();
     this->bind();
     this->listen();
+    fprintf(stdout, "listencon ready\n");
 }
 
 //很明显 只要使用IO多路复用，那么网络编程中的accept()系统调用和其他诸如socket(),bind(),listen()的

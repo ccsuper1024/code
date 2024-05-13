@@ -4,7 +4,7 @@
 #include "../Reactor/EchoTcpSever.h"
 
 int main() {
-    EchoTcpSever server(4,10,"127.0.0.1", 8888);
+    EchoTcpSever server(4,10,"127.0.0.1", 6666);
     server.start();
     server.stop();
     return 0;

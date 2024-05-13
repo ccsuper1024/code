@@ -116,7 +116,7 @@ int EventLoop::createEpollFd() {
     return fd;
 }
 void EventLoop::addEpollReadFd(int fd) {
-    epoll_event ev;
+    struct epoll_event ev;
     ev.data.fd = fd;
     ev.events = EPOLLIN;        //epoll默认为水平触发
     int ret = epoll_ctl(fd,EPOLL_CTL_ADD,fd,&ev);
@@ -127,7 +127,7 @@ void EventLoop::addEpollReadFd(int fd) {
     }
 }
 void EventLoop::delEpollReadFd(int fd) {
-    epoll_event ev;
+    struct epoll_event ev;
     ev.data.fd = fd;
     ev.events = EPOLLIN;
     int ret = epoll_ctl(fd,EPOLL_CTL_DEL,fd,&ev);
@@ -141,7 +141,7 @@ void EventLoop::delEpollReadFd(int fd) {
 void EventLoop::waitEpollFd() {
     int nready;
     do {
-        nready = epoll_wait(_epfd, &*_evtlist.begin(),
+        nready = epoll_wait(_epfd, &(*_evtlist.begin()),
                             _evtlist.size(), 5000);     //timeout为-1则永久等待
     }while(-1 == nready && EINTR == errno);     //被信号中断
 

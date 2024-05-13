@@ -5,7 +5,7 @@
 
 int main()
 {
-    TcpServer server("127.0.0.1", 8888);
+    TcpServer server("127.0.0.1", 6666);
     server.start();
 
     return 0;

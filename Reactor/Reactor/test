@@ -1,0 +1,1006 @@
+//
+// Created by chenchao on 24-5-8.
+//
+#include "Acceptor.h"
+
+Acceptor::Acceptor(const std::string& ip, unsigned short port)
+:_sock()
+ ,_addr(ip, port)
+ ,_peerAddr()
+{
+}
+void Acceptor::setReuseAddr() { //设置地址复用
+    int on = 1;
+    int ret = setsockopt(_sock.fd(),SOL_SOCKET,
+                             SO_REUSEADDR,&on, sizeof(on));
+    if(-1 == ret) {
+        fprintf(stderr, "setsockopt error\n");
+        //TODO:LOG
+        return ;
+    }
+}
+void Acceptor::setReusePort() {   //设置端口复用
+    int on = 1;
+    int ret = setsockopt(_sock.fd(), SOL_SOCKET,
+                         SO_REUSEPORT, &on, sizeof(on));
+    if(-1 == ret) {
+        fprintf(stderr, "setsockopt error\n");
+        //TODO:LOG
+        return ;
+    }
+}
+void Acceptor::bind() {
+    int ret = ::bind(_sock.fd(), (struct sockaddr*)_addr.getInetAddrPtr(),
+                     sizeof(struct sockaddr));
+    if(-1 == ret) {
+        fprintf(stderr, "bind error\n");
+        //TODO:LOG
+        return ;
+    }
+
+}
+void Acceptor::listen() {   //监听。
+    //socket系统调用创建的内核文件的输入输出缓冲区被改为半连接队列和全连接队列。
+    //而这两个队列的大小是listen()系统调用的第二个参数
+    int ret = ::listen(_sock.fd(), 128);
+    if(-1 == ret) {
+        fprintf(stderr, "listen error\n");
+        //TODO:LOG
+        return ;
+    }
+
+}
+int Acceptor::fd() {
+    return _sock.fd();
+}
+void Acceptor::ready() {
+    this->setReuseAddr();
+    this->setReusePort();
+    this->bind();
+    this->listen();
+    fprintf(stdout, "listencon ready\n");
+}
+
+//很明显 只要使用IO多路复用，那么网络编程中的accept()系统调用和其他诸如socket(),bind(),listen()的
+//函数要分开
+int Acceptor::accept() {
+//    socklen_t len = sizeof((*_peerAddr.getInetAddrPtr()));
+//    int connfd = ::accept(_sock.fd(), (struct sockaddr*)_peerAddr.getInetAddrPtr(),
+//    len);
+    int connfd = ::accept(_sock.fd(), nullptr, nullptr);
+    if(-1 == connfd) {
+        perror("accept");
+        //TODO:LOG
+        return connfd;
+    }
+    return connfd;
+}
+
+InetAddress Acceptor::getPeerInetAddress() {
+    return _peerAddr;
+}
+
+
+//
+// Created by chenchao on 24-5-8.
+//
+
+#ifndef REACTOR_ACCEPTOR_H
+#define REACTOR_ACCEPTOR_H
+#include <string>
+#include "InetAddress.h"
+#include "Socket.h"
+
+class Acceptor
+{
+public:
+    Acceptor(const std::string& ip, unsigned short port);
+    void ready();
+    int  accept();
+    int  fd();
+    InetAddress getPeerInetAddress();
+    ~Acceptor()=default;
+private:
+    void setReuseAddr();        //设置地址复用
+    void setReusePort();        //设置端口复用
+    void bind();
+    void listen();
+private:
+    Socket _sock;
+    InetAddress _addr;
+    InetAddress _peerAddr;
+};
+
+
+#endif //REACTOR_ACCEPTOR_H
+//
+// Created by chenchao on 24-5-10.
+//
+
+#ifndef REACTOR_ECHOTCPSEVER_H
+#define REACTOR_ECHOTCPSEVER_H
+#include "../Reactor/TcpConnection.h"
+#include "../Reactor/TcpServer.h"
+#include "../ThreadPool/ThreadPool.h"
+#include <iostream>
+
+using TcpConnectionPtr = std::shared_ptr<TcpConnection>;
+class MyTask
+{
+public:
+    MyTask(const std::string& msg, const TcpConnectionPtr& con)
+    :_msg(msg)
+    ,_con(con)
+    {}
+    void process() {
+        //将业务逻辑在此处添加
+        _con->sendLoop(_msg);
+    }
+private:
+    std::string _msg;
+    TcpConnectionPtr _con;
+};
+
+class EchoTcpSever
+{
+public:
+    EchoTcpSever(size_t threadNum, size_t queSize, const std::string& ip, unsigned short port)
+    : _server(ip, port)
+    , _pool(threadNum, queSize)
+    {}
+
+    ~EchoTcpSever()=default;
+
+    void start() {
+        _pool.start();
+        using namespace std::placeholders;
+        _server.setAllCallback(std::bind(&EchoTcpSever::onNewConnection, this, _1),
+                                std::bind(&EchoTcpSever::onMessage, this, _1),
+                                std::bind(&EchoTcpSever::onClose, this, _1));
+    }
+
+    void stop() {
+        _server.stop();
+        _pool.stop();
+    }
+private:
+    //建立新的连接时
+    void onNewConnection(const TcpConnectionPtr& con) {
+        std::cout << con->outputString() << "has connected" << std::endl;
+    }
+
+    //消息到达时
+    void onMessage(const TcpConnectionPtr& con) {
+        std::string msg = con->receive();       //接受客户的数据
+        std::cout << ">> recv msg from client "<< msg << std::endl;
+
+        //接受到客户端的msg之后，是可以进行业务的逻辑处理
+        MyTask task(msg, con);
+        //添加了Task，添加到线程中去了，执行了_taskQue;
+        //在doTask()会执行此任务。如果要想客户端返回数据，就要在process中
+        //处理数据，并把处理后的数据发回去,即调用_con->sendLoop(msg)
+        _pool.addTask(std::bind(&MyTask::process, task));
+    }
+    //连接关闭时
+    void onClose(const TcpConnectionPtr& con) {
+        std::cout << con->outputString() << " has closed" << std::endl;
+    }
+private:
+    TcpServer _server;
+    ThreadPool _pool;
+};
+
+#endif //REACTOR_ECHOTCPSEVER_H
+//
+// Created by chenchao on 24-5-8.
+//
+#include <sys/epoll.h>
+#include <sys/eventfd.h>
+#include <unistd.h>
+#include <sys/timerfd.h>
+#include "Acceptor.h"
+#include "TcpConnection.h"
+#include "EventLoop.h"
+
+
+EventLoop::EventLoop(Acceptor& acceptor)
+:_epfd(createEpollFd())
+,_evfd(createEventFd())
+,_isLooping(false)
+,_acceptor(acceptor)    //复制构造
+,_evtlist(1024)
+,_conns()
+,_onConnectionCb()
+,_onMessageCb()
+,_onCloseCb()
+,_pendings()
+,_mtx()
+{
+    //监听 监听套件字描述符
+    addEpollReadFd(_acceptor.accept());
+    //监听eventfd创建的文件描述符
+    addEpollReadFd(_evfd);
+}
+EventLoop::~EventLoop() {
+    //回收系统资源
+    close(_epfd);
+    close(_evfd);
+}
+void EventLoop::loop() {    //开启事件循环
+    _isLooping = true;
+    while(_isLooping) {
+        waitEpollFd();
+    }
+}
+void EventLoop::unloop() {
+    _isLooping = false;
+}
+void EventLoop::runInLoop(Functors&& cb) {
+   /*
+    将要执行的任务先存放在vector中
+    任务就是线程池处理好之后的msg
+    以及发送msg的能力的TcpConnection中的send函数
+   */
+    {
+        std::lock_guard<std::mutex> lk(_mtx);
+        _pendings.push_back(std::move(cb));
+    }
+
+    wakeup();
+}
+void EventLoop::handleNewConnection() {
+    //执行accept函数。accept系统调用是阻塞等待socket系统调用创建的内核文件中的全连接队列
+    //它会从中拿出一个新连接，并创建一个相应的内核文件(具备输入输出缓冲区)。
+    //所以每次epoll监听到监听套件字就绪时，也就意味着有新连接到来了
+    int connfd = _acceptor.accept();
+    if( connfd < 0) {
+        fprintf(stderr, "_acceptor.accept() error\n");
+        //TODO:LOG
+        return ;
+    }
+
+    //accept函数返回的文件描述符放在红黑树上监听
+    addEpollReadFd(connfd);
+
+    //创建TcpCconnection用于读写
+    //此处构建std::shared_ptr版本的TcpConnection。需要继承std::enable_shared_from_this<>;
+    TcpConnectionPtr con(new TcpConnection(connfd ,this));
+
+    //向TcpConnection中注册回调函数
+    con->setNewConnectionCallback(_onConnectionCb);
+    con->setMessageCallback(_onMessageCb);
+    con->setCloseCallback(_onCloseCb);
+
+    //将文件描述符与TcpConnection以键值对形式存放在std::map中，方便下一次的通信
+    _conns.insert(std::make_pair(connfd, con));
+
+    //新的连接建立了，调用TcpConnection处理新连接的函数
+    con->handleNewConnectionCallback();
+
+}
+void EventLoop::handleMessage(int fd) {
+    auto it = _conns.find(fd);  //找到旧连接
+    if(it != _conns.end()) {
+        bool flag = it->second->isClosed();
+        if(flag) {          //如果连接断开
+            //连接断开时的事件回调
+            it->second->handleCloseCallback();
+            //将连接对应的文件描述符从epoll的红黑树上溢出
+            delEpollReadFd(fd);
+            //从std::map中删除断开的连接
+            _conns.erase(it);
+        } else {            //如果连接畅通
+            //消息到达时，回调事件
+            it->second->handleMessageCallback();
+        }
+    } else {
+        fprintf(stdout, "该连接不存在\n");
+        //TODO:LOG
+        //或者尝试建立新连接？？？
+    }
+}
+int EventLoop::createEpollFd() {
+    int fd = epoll_create(1);
+    if(fd < 0) {
+        fprintf(stderr, "epoll_create error\n");
+        //TODO:LOG
+        return fd;
+    }
+    return fd;
+}
+void EventLoop::addEpollReadFd(int fd) {
+    struct epoll_event ev;
+    ev.data.fd = fd;
+    ev.events = EPOLLIN;        //epoll默认为水平触发
+    int ret = epoll_ctl(fd,EPOLL_CTL_ADD,fd,&ev);
+    if (ret < 0) {
+        fprintf(stderr, "addEpollFd error\n");
+        //TODO:LOG
+        return ;
+    }
+}
+void EventLoop::delEpollReadFd(int fd) {
+    struct epoll_event ev;
+    ev.data.fd = fd;
+    ev.events = EPOLLIN;
+    int ret = epoll_ctl(fd,EPOLL_CTL_DEL,fd,&ev);
+    if (ret < 0) {
+        fprintf(stderr, "delEpollFd error\n");
+        //TODO:LOG
+        return ;
+    }
+
+}
+void EventLoop::waitEpollFd() {
+    int nready;
+    do {
+        nready = epoll_wait(_epfd, &(*_evtlist.begin()),
+                            _evtlist.size(), 5000);     //timeout为-1则永久等待
+    }while(-1 == nready && EINTR == errno);     //被信号中断
+
+    if(-1 == nready) {                          //出现错误
+        fprintf(stderr, "-1 == ready\n");
+        //TODO:LOG
+        return;
+    } else if(0 == nready) {                    //在指定时间内没有事件就绪
+        fprintf(stderr, "epoll_wait timeout\n");
+        //TODO:LOG
+        //只是一次超时，在事件循环中不需要退出程序
+    } else {                                    //事件就绪
+        //考虑就绪的事件可能越来越多，会造成vector移动内存，所以预先扩容
+        //设定预先扩容的边界是就绪事件数量大于当前大小的0.7，小于当前数量大小时
+        if(nready >= static_cast<int>(_evtlist.size() * (7 / 10)) ||
+                nready <= static_cast<int>(_evtlist.size())) {
+            _evtlist.resize(2 * nready);
+        }
+        for(long unsigned int idx{0}; idx < _evtlist.size(); ++idx) {     //遍历返回的事件列表
+                int fd = _evtlist[idx].data.fd;
+                auto event = _evtlist[idx].events;
+                //就绪事件是监听套接字时
+                if(fd == _acceptor.accept()) {
+                    if(event & EPOLLIN) {    //读事件就绪
+                        handleNewConnection();
+                    }
+                } else if(fd == _evfd) {                    //eventfd创建的套接字就绪时
+                    if(event & EPOLLIN) {
+                        handleRead();
+                        //将所有任务全部执行一下
+                        //线程池处理好之后的msg以及发送数据
+                        //能力的TcpConnection中的send
+                        doPendingFunctors();
+                    }
+                } else {                                    //旧的连接
+                    if(event & EPOLLIN) {
+                        handleMessage(fd);
+                    }
+                }
+        }
+    }
+}
+void EventLoop::setNewConnectionCallback(TcpConnectionCallback&& cb) {
+    _onConnectionCb = std::move(cb);
+}
+void EventLoop::setMessageCallback(TcpConnectionCallback&& cb) {
+    _onMessageCb = std::move(cb);
+}
+void EventLoop::setCloseCallback(TcpConnectionCallback&& cb) {
+    _onCloseCb = std::move(cb);
+}
+int EventLoop::createEventFd() {
+    int fd = eventfd(10, 0);
+    if (fd  == -1) {
+        fprintf(stderr, "eventfd error\n");
+        //TODO:LOG
+        exit(EXIT_FAILURE);
+    }
+    return fd;
+}
+void EventLoop::wakeup() {
+    uint64_t one = 1;
+    ssize_t ret = write(_evfd, &one, sizeof(uint64_t));
+    if(ret != sizeof(uint64_t)) {
+        fprintf(stderr, "eventfd write error\n");
+        //TODO:LOG
+        exit(EXIT_FAILURE);
+    }
+}
+void EventLoop::handleRead() {
+    uint64_t one = 1;
+    ssize_t ret = read(_evfd, &one, sizeof(uint64_t));
+    if(ret != sizeof(uint64_t)) {
+        fprintf(stderr, "eventfd read error\n");
+        //TODO:LOG
+        exit(EXIT_FAILURE);
+    }
+}
+//将vector中的所有回调函数都进行执行
+void EventLoop::doPendingFunctors() {
+    std::vector<Functors> tmp;
+    //将std::vector中的cb取出来，放在另外的容器中进行变量
+    //那么原来的std::vector可以释放出来，可以往其中写数据
+    {
+        std::lock_guard<std::mutex> lk(_mtx);
+        tmp.swap(_pendings);
+    }
+    //遍历vector，将所有callback执行
+    for(auto& cb: tmp) {
+        cb();
+    }
+}
+
+//
+// Created by chenchao on 24-5-9.
+//
+#ifndef REACTOR_EVENTLOOP_H
+#define REACTOR_EVENTLOOP_H
+#include <mutex>
+#include <vector>
+#include <map>
+#include <memory>
+#include <functional>
+
+//前向声明
+class Acceptor;
+class TcpConnection;
+class EventLoop
+{
+    using TcpConnectionPtr = std::shared_ptr<TcpConnection>;
+    using TcpConnectionCallback = std::function<void(const TcpConnectionPtr &)>;
+    using Functors = std::function<void()>;
+public:
+    EventLoop(Acceptor& acceptor);
+    ~EventLoop();
+
+    //开启事件循环
+    void loop();        
+    void unloop();
+
+    void runInLoop(Functors&& cb);
+
+    //在EventLoop中需要注册三个回调函数，将其传给TcpConnection
+    void setNewConnectionCallback(TcpConnectionCallback&& cb);
+    void setMessageCallback(TcpConnectionCallback&& cb);
+    void setCloseCallback(TcpConnectionCallback&& cb);
+private:
+    //执行epoll_wait
+    void waitEpollFd();
+    //执行epoll_create 返回监听epoll event的内核文件的文件描述符
+    int  createEpollFd();
+    //向epoll event中添加要监听的文件描述符。红黑树和队列
+    void addEpollReadFd(int fd);
+    //将文件描述符从epoll监听的红黑树上删除
+    void delEpollReadFd(int fd);
+    //处理新连接
+    void handleNewConnection();
+    //发送消息
+    void handleMessage(int fd);
+private:
+    //处理eventfd的读事件
+    void handleRead();
+    //处理eventfd中的写事件
+    void wakeup();
+    //eventfd()创建事件，事件通知
+    int createEventFd();
+    //将vector中的所有回调函数都进行执行
+    void doPendingFunctors();
+private:
+    //epoll 事件的文件描述符
+    int _epfd;
+    //eventfd系统调用创建的文件描述符, 用于事件通知
+    int _evfd;
+    //标志事件循环开始
+    bool _isLooping;
+    Acceptor& _acceptor;        //引用成员必须在类成员初始化列表中初始化
+    std::vector<struct epoll_event> _evtlist;
+    std::map<int, std::shared_ptr<TcpConnection>> _conns;
+    //陈硕说的，tcp的三个半事件中的三个，还有消息发送完毕
+    TcpConnectionCallback _onConnectionCb;      //事件1：连接的建立
+    TcpConnectionCallback _onMessageCb;         //事件2：消息的发送。包括同步阻塞发送，同步非阻塞发送和异步发送消息
+    TcpConnectionCallback _onCloseCb;           //事件3：连接的关闭。应该包括主动关闭，被动关闭，和优雅关闭
+
+    //待执行的任务的动态数组
+    std::vector<Functors> _pendings;
+    //锁
+    std::mutex _mtx;
+};
+#endif //REACTOR_EVENTLOOP_H
+//
+// Created by chenchao on 24-5-8.
+//
+#include <strings.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include "InetAddress.h"
+InetAddress::InetAddress()
+{
+    ::bzero(&_addr, sizeof(struct sockaddr_in));
+}
+InetAddress::InetAddress(const std::string& ip, unsigned short port)
+{
+    bzero(&_addr, sizeof(_addr));
+    _addr.sin_family = AF_INET;
+    _addr.sin_addr.s_addr = inet_addr(ip.c_str());  //主机字节序->网络字节序
+    _addr.sin_port = htons(port);
+}
+
+//复制构造
+InetAddress::InetAddress(const struct sockaddr_in& addr)
+:_addr(addr)    //结构体复制
+{
+
+}
+
+bool InetAddress::isEmpty() {
+    return _addr.sin_family == 0 && _addr.sin_port == 0
+             && _addr.sin_addr.s_addr == 0;
+}
+std::string InetAddress::ip() const {
+    return std::string(inet_ntoa(_addr.sin_addr));
+}
+unsigned short InetAddress::port() const {
+    return ntohs(_addr.sin_port);
+}
+const struct sockaddr_in* InetAddress::getInetAddrPtr() const{
+    return &_addr;
+}
+//
+// Created by chenchao on 24-5-8.
+//
+
+#ifndef REACTOR_INETADDRESS_H
+#define REACTOR_INETADDRESS_H
+#include <arpa/inet.h>
+#include <string>
+
+class InetAddress
+{
+public:
+    InetAddress();
+    InetAddress(const std::string& ip, unsigned short port);
+    InetAddress(const struct sockaddr_in& addr);
+    bool isEmpty();
+    std::string ip() const;
+    unsigned short port() const;
+    const struct sockaddr_in* getInetAddrPtr() const;
+    ~InetAddress()=default;
+private:
+    struct sockaddr_in _addr;
+};
+
+
+#endif //REACTOR_INETADDRESS_H
+//
+// Created by chenchao on 24-5-8.
+//
+
+#ifndef REACTOR_NOCOPYABLE_H
+#define REACTOR_NOCOPYABLE_H
+class NoCopyable
+{
+public:
+    //不可复制类必须自己定义默认构造和析构。或用=default指定编译器构造，因为复制构造会被删除，而有了
+    //显式的删除的复制构造函数，编译器会认为不需要默认构造，不会自动合成默认构造函数
+    NoCopyable()=default;
+    ~NoCopyable()=default;
+    NoCopyable(const NoCopyable& rhs)=delete;
+    NoCopyable& operator=(const NoCopyable& rhs)=delete;
+};
+#endif //REACTOR_NOCOPYABLE_H
+//
+// Created by chenchao on 24-5-8.
+//
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <cstdlib>
+#include <cstdio>
+#include <unistd.h>
+#include "Socket.h"
+Socket::Socket()
+{
+    //加上全局作用域
+    _fd = ::socket(AF_INET,SOCK_STREAM,0);
+    if(_fd < 0) {
+        //TODO: log
+        perror("socket ");
+        return ;
+    }
+    fprintf(stdout, "the listenfd is %d\n", _fd);
+}
+Socket::Socket(int fd)
+:_fd(fd)
+{
+    if(_fd < 1024) {
+        //TODO: log
+        fprintf(stderr, "%d is commonly used port", _fd);
+        exit(EXIT_FAILURE);
+    }
+}
+Socket::~Socket() {
+    //关闭文件描述符， RAII机制
+    close(_fd);
+}
+int Socket::fd() {
+    return _fd;
+}
+
+void Socket::shutDownWrite() {
+    int ret = ::shutdown(_fd, SHUT_WR);
+    if(ret < 0) {
+        //TODO: log
+        fprintf(stderr, "shutdown on writer fail");
+        exit(EXIT_FAILURE);
+    }
+}
+void Socket::shutDownRead() {
+    int ret = ::shutdown(_fd, SHUT_RD);
+    if(ret < 0) {
+        //TODO: log
+        fprintf(stderr, "shutdown on read fail");
+        exit(EXIT_FAILURE);
+    }
+}
+//
+// Created by chenchao on 24-5-8.
+//
+
+#ifndef REACTOR_SOCKET_H
+#define REACTOR_SOCKET_H
+
+class Socket
+{
+public:
+    Socket();
+    explicit  Socket(int fd);
+    ~Socket();
+    int fd();
+    void shutDownWrite();
+    void shutDownRead();
+private:
+    int _fd;
+};
+#endif //REACTOR_SOCKET_H
+//
+// Created by chenchao on 24-5-8.
+//
+//c standard library
+#include <unistd.h>
+#include <errno.h>
+#include <sys/socket.h>
+
+//c++ standard library
+#include <cstdio>
+
+//C++ third party library
+#include "SocketIO.h"
+SocketIO::SocketIO(int fd)
+:_fd(fd)
+{
+
+}
+SocketIO::~SocketIO() {
+   close(_fd);
+}
+//这里的char* 不仅仅表示是指向字符的指针，更表示1个字节。因为char类型在C/C++中的定义就是一个字节
+//而TCP套接字是流式的，无边界的传输方式，用字节来读取最合适
+int SocketIO::readn(char* buf, int len) {
+    int left = len; //要读取的字节数
+    char*ptr = buf; //指向分配内存中还未写入内容的地址
+    int ret = 0;
+    while(left > 0 ) {
+        ret = read(_fd, ptr, left);
+        if(ret == -1 && errno == EINTR)  {   //read系统调用被信号中断
+            continue;
+        } else if( ret == -1) {              //read系统调用出现错误
+            fprintf(stderr, "read fail");
+            //exit(EXIT_FAILURE);
+            //TODO:LOG
+            return len - left;
+        } else if(0 == ret) {               //读取结束
+            break;
+        } else {
+            ptr += ret;
+            left -= ret;
+        }
+    }
+    return len - left;  //返回还有多少指定的字节没读取出来
+}
+int SocketIO::readLine(char* buf, int len) {
+    int left = len -1;
+    char* ptr = buf;
+    int ret = 0;
+    int total = 0;
+
+    while(left > 0) {
+        //MSG_PEEK 不会将缓冲区的数据进行清空，只会进行拷贝操作
+        //先从内核缓冲区中读取数据，但不改变内核缓冲区的文件指针。
+        ret = recv(_fd, ptr, left, MSG_PEEK);
+        if(-1 == ret && errno == EINTR) {       //被信号中断
+            continue;
+        }else if(-1 == ret) {                   //错误
+            //TODO:LOG
+            fprintf(stderr,"readLine error!");
+        }else if(0 == ret) {                    //读取结束
+            break;
+        }else {                                 //对读取的数据进行判定，是否有换行符
+            //先遍历读取到的数据，看其中是否有换行符
+            //如果有换行符，则进行readn 来移动内核文件缓冲区中的文件指针
+            //大小由idx决定。这样，内核文件输入缓冲区的文件指针只会移动一行大小
+            for(int idx{0}; idx < ret; ++idx) {
+                if(ptr[idx] == '\n') {
+                    int sz = idx + 1;
+                    readn(ptr, sz);
+                    ptr += sz;
+                    *ptr = '\0';    //c风格字符串以'\0'结尾
+
+                    return total + sz;
+                }
+            }
+            //只是为了移动内核文件中的文件指针
+//            readn(ptr,ret);
+            readn(buf,ret);
+            total += ret;
+            ptr += ret;
+            left -= ret;
+        }
+    }
+    *ptr = '\0';
+    return total;           //返回实际读取的字节数
+}
+int SocketIO::writen(const char* buf, int len) {
+    int left = len;
+    const char* ptr = buf;
+    int ret = 0;
+    while (left > 0) {
+        ret = writen(ptr, left);
+        if(-1 == ret && errno == EINTR) {
+            continue;
+        } else if(-1 == ret) {
+            fprintf(stderr, "write wrong");
+            //TODO: log
+            return len - left;
+        } else if(0 == ret) {
+            break;
+        } else {
+            ptr += ret;
+            left -= ret;
+        }
+    }
+    return len - left;      //返回实际写入的字节数
+}
+//
+// Created by chenchao on 24-5-8.
+//
+
+#ifndef REACTOR_SOKETIO_H
+#define REACTOR_SOKETIO_H
+class SocketIO
+{
+public:
+    explicit SocketIO(int fd);
+    ~SocketIO();
+    //这里的char* 不仅仅表示是指向字符的指针，更表示1个字节。因为char类型在C/C++中的定义就是一个字节
+    //而TCP套接字是流式的，无边界的传输方式，用字节来读取最合适
+    int readn(char* buf, int len);
+    int readLine(char* buf, int len);
+    int writen(const char* buf, int len);
+private:
+    int _fd;
+};
+#endif //REACTOR_SOKETIO_H
+//
+// Created by chenchao on 24-5-8.
+//
+#include "EventLoop.h"
+#include "TcpConnection.h"
+#include <sys/socket.h>
+#include <sstream>
+TcpConnection::TcpConnection(int fd,EventLoop* loop)
+:_sock(fd)
+, _sockIO(fd)
+,_localAddr(getLocalAddr())
+,_peerAddr(getPeerAddr())
+,_loop(loop)
+{
+
+}
+void TcpConnection::send(const std::string& msg) {
+    _sockIO.writen(msg.c_str(), msg.size());
+}
+
+//将msg发送给EventLoop，然后让EventLoop将数据发送给客户端
+//因为EventLoop本身没有发送数据的能力，所以再次出需要将msg
+//以及具有发送msg能力的TcpConnection::send一起传递给EventLoop.
+//为什么要这样子设计？？TcpConnection类到底是干什么的？？
+void TcpConnection::sendLoop(const std::string& msg) {  //让msg在EventLoop中发送
+    if(_loop) {
+        _loop->runInLoop(std::bind(&TcpConnection::send, this, msg));
+    }
+}
+std::string TcpConnection::receive() {
+    char buff[65535] = {0};     //64kb
+    _sockIO.readLine(buff, sizeof(buff));
+
+    return std::string(buff);       //构造临时对象，传递给返回值时，发生复制
+}
+std::string TcpConnection::outputString() {
+   std::ostringstream oss;
+   oss << _localAddr.ip() << ":"
+        << _localAddr.port() << ":"
+        << _peerAddr.ip()<< ":"
+        << _peerAddr.port()<<std::endl;
+   return oss.str();
+}
+InetAddress TcpConnection::getLocalAddr() {
+    struct sockaddr_in addr;
+    socklen_t len = sizeof(struct sockaddr_in);
+    int ret = getsockname(_sock.fd(), (struct sockaddr*)&addr, &len);
+    if (-1 == ret) {
+        fprintf(stderr, "getlocalname error\n");
+        //TODO:log
+        return InetAddress();
+    }
+    return InetAddress(addr);
+}
+InetAddress TcpConnection::getPeerAddr() {
+    struct sockaddr_in addr;
+    socklen_t len = sizeof(struct sockaddr_in);
+    int ret = getpeername(_sock.fd(), (struct sockaddr*)&addr, &len);
+    if (-1 == ret) {
+        fprintf(stderr, "getpeername error\n");
+        //TODO:log
+        return InetAddress();
+    }
+    return InetAddress(addr);
+
+}
+
+//检测发送端连接断开的方法是使用recv函数。
+//因为recv的返回值是返回数据的字节长度;或者若无可用数据或对等方已经按序结束，则会返回0，若出错则返回-1；
+//但这只能通过返回值为0检测到发送方主动关闭连接，无法判定因为网络异常等客观原因而出现的连接断开问题，这些问题
+//可以通过心跳协议来进一步判断。
+bool TcpConnection::isClosed() {
+    char buf[10] = {0};
+    //第四个参数表明，recv只是拷贝内核文件中输入缓冲区数据，不会改变其中的指针。下一次使用正常的阻塞的read
+    //还是会从缓冲区的头部开始读
+    int ret = recv(_sock.fd(), buf, sizeof(buf), MSG_PEEK);
+    return(0 == ret);
+}
+void TcpConnection::setNewConnectionCallback(const TcpConnectionCallback& cb) {
+    _onConnectionCb = cb;
+}
+void TcpConnection::setMessageCallback(const TcpConnectionCallback& cb) {
+    _onMessageCb = cb;
+}
+void TcpConnection::setCloseCallback(const TcpConnectionCallback& cb) {
+    _onCloseCb = cb;
+}
+void TcpConnection::handleNewConnectionCallback() {
+    if(_onConnectionCb) {
+        //using TcpConnectionCallback = std::function<void(const TcpConnectionPtr& )>;
+        //TcpConnectionCallback的变量_onConnectionCb是一个函数对象，参数为const TcpConnectionPtr&
+        //TcpConnectionPtr是TcpConnection的智能指针,所以TcpConnection类要继承std::enable_shared_from_this<>
+        //返回值为void
+        _onConnectionCb(shared_from_this());
+    }
+}
+void TcpConnection::handleMessageCallback() {
+    if(_onMessageCb) {
+        _onMessageCb(shared_from_this());
+    }
+}
+void TcpConnection::handleCloseCallback() {
+    if(_onCloseCb) {
+        _onCloseCb(shared_from_this());
+    }
+}
+//
+// Created by chenchao on 24-5-8.
+//
+#ifndef REACTOR_TCPCONNECTION_H
+#define REACTOR_TCPCONNECTION_H
+#include "Socket.h"
+#include "SocketIO.h"
+#include "InetAddress.h"
+#include <memory>
+#include <functional>
+
+class EventLoop;        //前向声明
+class TcpConnection
+:public std::enable_shared_from_this<TcpConnection>
+{
+    using TcpConnectionPtr = std::shared_ptr<TcpConnection>;
+    using TcpConnectionCallback = std::function<void(const TcpConnectionPtr& )>;
+public:
+    explicit  TcpConnection(int fd, EventLoop* loop);
+    void send(const std::string& msg);
+    void sendLoop(const std::string& msg);  //让msg在EventLoop中发送
+    std::string receive();
+    std::string outputString();
+    bool isClosed();
+    void setNewConnectionCallback(const TcpConnectionCallback& cb);
+    void setMessageCallback(const TcpConnectionCallback& cb);
+    void setCloseCallback(const TcpConnectionCallback& cb);
+    void handleNewConnectionCallback();
+    void handleMessageCallback();
+    void handleCloseCallback();
+
+    ~TcpConnection()=default;
+private:
+    InetAddress getLocalAddr();
+    InetAddress getPeerAddr();
+private:
+    Socket _sock;
+    SocketIO _sockIO;
+    InetAddress _localAddr;
+    InetAddress _peerAddr;
+    //前向声明是不完整类型，可以使用不完整类型的指针或引用。因为指针或引用的大小是确定的
+    EventLoop* _loop;                           //让TcpConnection知道EventLoop的存在
+    TcpConnectionCallback _onConnectionCb;      //1.连接建立
+    TcpConnectionCallback _onMessageCb;         //2.消息到达
+    TcpConnectionCallback _onCloseCb;           //3.连接断开
+};
+
+
+#endif //REACTOR_TCPCONNECTION_H
+//
+// Created by chenchao on 24-5-8.
+//
+
+#include "TcpServer.h"
+TcpServer::TcpServer(const std::string& ip, unsigned short port)
+: _acceptor(ip,port)
+, _loop(_acceptor)
+{
+
+}
+TcpServer::~TcpServer() {}
+//让服务器运行起来
+void TcpServer::start() {
+    _acceptor.ready();
+    _loop.loop();
+}
+//停止服务器
+void TcpServer::stop() {
+    _loop.unloop();
+}
+//对三个半事件注册回调函数
+void TcpServer::setAllCallback(TcpConnectionCallback&& onConnection,
+                    TcpConnectionCallback&& onMessage,
+                    TcpConnectionCallback&& onClose) {
+
+    _loop.setNewConnectionCallback(std::move(onConnection));
+    _loop.setMessageCallback(std::move(onMessage));
+    _loop.setCloseCallback(std::move(onClose));
+}
+//
+// Created by chenchao on 24-5-8.
+//
+#ifndef REACTOR_TCPSERVER_H
+#define REACTOR_TCPSERVER_H
+#include "Acceptor.h"
+#include "EventLoop.h"
+class TcpServer
+{
+    using TcpConnectionPtr = std::shared_ptr<TcpConnection>;
+    using TcpConnectionCallback = std::function<void(const TcpConnectionPtr &)>;
+public:
+    TcpServer(const std::string& ip, unsigned short port);
+    ~TcpServer();
+
+    //让服务器运行起来
+    void start();
+    //停止服务器
+    void stop();
+    //对三个半事件注册回调函数
+    void setAllCallback(TcpConnectionCallback&& onConnection,
+                        TcpConnectionCallback&& onMessage,
+                        TcpConnectionCallback&& onClose);
+private:
+    //组合
+    Acceptor _acceptor;
+    EventLoop _loop;
+};
+
+
+#endif //REACTOR_TCPSERVER_H
