@@ -24,7 +24,7 @@ EventLoop::EventLoop(Acceptor& acceptor)
 ,_mtx()
 {
     //监听 监听套件字描述符
-    addEpollReadFd(_acceptor.accept());
+    addEpollReadFd(_acceptor.fd());
     //监听eventfd创建的文件描述符
     addEpollReadFd(_evfd);
 }
@@ -119,7 +119,7 @@ void EventLoop::addEpollReadFd(int fd) {
     struct epoll_event ev;
     ev.data.fd = fd;
     ev.events = EPOLLIN;        //epoll默认为水平触发
-    int ret = epoll_ctl(fd,EPOLL_CTL_ADD,fd,&ev);
+    int ret = epoll_ctl(_epfd,EPOLL_CTL_ADD,fd,&ev);
     if (ret < 0) {
         fprintf(stderr, "addEpollFd error\n");
         //TODO:LOG

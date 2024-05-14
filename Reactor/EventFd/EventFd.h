@@ -5,10 +5,9 @@
 #ifndef REACTOR_EVENTFD_H
 #define REACTOR_EVENTFD_H
 
-
-class EventFd {
+class EventFd
+{
 
 };
-
 
 #endif //REACTOR_EVENTFD_H

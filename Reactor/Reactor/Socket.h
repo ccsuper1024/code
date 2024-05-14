@@ -4,9 +4,10 @@
 
 #ifndef REACTOR_SOCKET_H
 #define REACTOR_SOCKET_H
-
+#include "NoCopyable.h"
 
 class Socket
+        :public  NoCopyable
 {
 public:
     Socket();

@@ -23,6 +23,7 @@ Socket::Socket(int fd)
 Socket::~Socket() {
     close(_fd);
 }
+
 int Socket::fd() const {
     return _fd;
 }

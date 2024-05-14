@@ -5,13 +5,15 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include "InetAddress.h"
+
+//默认构造
 InetAddress::InetAddress()
 {
     ::bzero(&_addr, sizeof(struct sockaddr_in));
 }
 InetAddress::InetAddress(const std::string& ip, unsigned short port)
 {
-    bzero(&_addr, sizeof(_addr));
+    bzero(&_addr, sizeof(struct sockaddr_in));
     _addr.sin_family = AF_INET;
     _addr.sin_addr.s_addr = inet_addr(ip.c_str());  //主机字节序->网络字节序
     _addr.sin_port = htons(port);

@@ -32,25 +32,25 @@ public:
     void setMessageCallback(TcpConnectionCallback&& cb);
     void setCloseCallback(TcpConnectionCallback&& cb);
 private:
-    //执行epoll_wait
-    void waitEpollFd();
     //执行epoll_create 返回监听epoll event的内核文件的文件描述符
     int  createEpollFd();
     //向epoll event中添加要监听的文件描述符。红黑树和队列
     void addEpollReadFd(int fd);
     //将文件描述符从epoll监听的红黑树上删除
     void delEpollReadFd(int fd);
+    //执行epoll_wait
+    void waitEpollFd();
     //处理新连接
     void handleNewConnection();
     //发送消息
     void handleMessage(int fd);
 private:
+    //eventfd()创建事件，事件通知
+    int createEventFd();
     //处理eventfd的读事件
     void handleRead();
     //处理eventfd中的写事件
     void wakeup();
-    //eventfd()创建事件，事件通知
-    int createEventFd();
     //将vector中的所有回调函数都进行执行
     void doPendingFunctors();
 private:

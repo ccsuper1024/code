@@ -11,7 +11,6 @@ TaskQue::TaskQue(size_t queSize)
 ,_notFull()
 ,_flag(true)
 {
-    //fprintf(stdout,"TaskQue(size_t queSize) \n");
 }
 TaskQue::~TaskQue()
 {
@@ -24,7 +23,7 @@ bool TaskQue::empty() const
 }
 bool TaskQue::full() const
 {
-    return _queSize == _que.size();
+    return static_cast<long unsigned int>(_queSize) == _que.size();
 }
 
 

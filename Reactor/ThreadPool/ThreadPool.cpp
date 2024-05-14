@@ -20,7 +20,7 @@ ThreadPool::~ThreadPool()
 void ThreadPool::start()
 {
     //创建线程
-    for(int i{}; i < _threadNum; ++i){
+    for(size_t i{}; i < _threadNum; ++i){
         std::unique_ptr<std::thread> uptrThread(new std::thread(&ThreadPool::doTask, this));
         _threadPool.push_back(std::move(uptrThread));
     }

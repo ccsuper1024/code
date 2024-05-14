@@ -17,7 +17,8 @@ SocketIO::SocketIO(int fd)
 
 }
 SocketIO::~SocketIO() {
-   close(_fd);
+    //close不是实际上删除socket内核文件，只会减小socket内核文件的引用计数，直到引用计数为0时才会真正的删除
+    close(_fd);
 }
 //这里的char* 不仅仅表示是指向字符的指针，更表示1个字节。因为char类型在C/C++中的定义就是一个字节
 //而TCP套接字是流式的，无边界的传输方式，用字节来读取最合适

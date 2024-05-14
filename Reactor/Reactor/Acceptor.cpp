@@ -71,7 +71,7 @@ int Acceptor::accept() {
     if(-1 == connfd) {
         perror("accept");
         //TODO:LOG
-        return connfd;
+        return -1;
     }
     return connfd;
 }
