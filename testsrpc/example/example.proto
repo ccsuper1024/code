@@ -1,0 +1,14 @@
+syntax = "proto3";      //protobuf版本要求
+
+message EchoRequest {
+    string message = 1;
+    string name = 2;
+};
+
+message EchoResponse{
+    string message = 1;
+};
+
+service Example {
+    rpc Echo(EchoRequest) returns (EchoResponse);
+};
