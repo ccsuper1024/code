@@ -1,0 +1,12 @@
+1、创建工作空间：mkdir -p ~/ros2_ws/my_workspace
+2、初始化工作空间：cd ~/ros2_ws/my_workspace
+    colcon build
+3、设置环境变量：source ~/ros2_ws/install/setup.bash
+    可以将此行命令加入~/bashrc文件中去，可以在每次打开新shell时都会自动设置环境变量
+4、创建ros2包：cd ~/ros2_ws/my_workspace/src
+    ros2 pkg create --build-type package_name ament_cmake my_package --license Apache-2.0
+    在install目录下会生成一个package_name文件夹
+
+5、构建包： cd ~/ros2_ws/my_workspace
+           colcon build
+6。运行包：ros2 run mypackage my_node

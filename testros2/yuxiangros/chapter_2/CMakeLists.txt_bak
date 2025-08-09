@@ -1,0 +1,18 @@
+#为了避免此文件被ros2的构建工具ament_cmake误用，所以将此文件备份
+cmake_minimum_required(VERSION 3.20)
+project(ros2_cpp)
+
+#rclcpp.hpp不在标准路径中，需要查找
+
+add_executable(ros2_cpp_node ros2_cpp_node.cpp)
+
+#查找rclcpp头文件和库文件的路径，并设置相应的变量
+find_package(rclcpp REQUIRED)
+message(STATUS "rclcpp include dirs" ${rclcpp_INCLUDE_DIRS})   #打印rclcpp的头文件和其依赖的头文件
+message(STATUS "rclcpp libraries" ${rclcpp_LIBRARIES})          #库文件和rclcpp依赖的库文件
+
+#给可执行文件包含头文件
+target_include_directories(ros2_cpp_node PUBLIC ${rclcpp_INCLUDE_DIRS})
+
+#给可执行文件链接库文件
+target_link_libraries(ros2_cpp_node ${rclcpp_LIBRARIES})
