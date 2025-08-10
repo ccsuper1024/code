@@ -74,4 +74,9 @@ _deps
 .vscode/
 .idea/
 
+
+
+#custome
+myproject/
 cmake-build-debug/
+testgit/
