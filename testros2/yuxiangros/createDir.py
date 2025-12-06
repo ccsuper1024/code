@@ -9,6 +9,7 @@ if len(sys.argv) != 2:
     print("Usage:python {} [number]".format())
     sys.exit()
 else:
+    print("argv[0]:{} argv[1]:{}".format(sys.argv[0], sys.argv[1]))
     maxdirectnumber = int(sys.argv[1])
     print("maxdirectnumber is {}".format(maxdirectnumber))
 #定义字符串
