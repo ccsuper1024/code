@@ -1,6 +1,7 @@
 /*
 equal包提供一个接口来判定任意两个值是否相等
 使用了reflect+unsafe包
+相对于reflect.equal函数的区别在于，对于nil的map值和非nil但为空的map值判断为相等而非不等
 */
 
 package equal
